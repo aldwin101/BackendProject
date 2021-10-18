@@ -30,14 +30,12 @@ def login():
 
             if email != None and password != None:
                 generateToken = uuid.uuid4().hex
-                print(generateToken)
                 cursor.execute("INSERT INTO user_session(login_token, user_id) VALUES (?,(SELECT id FROM user WHERE email=?));", [generateToken, data.get('email')])
                 conn.commit()
 
                 cursor.execute('SELECT user.id, email, username, bio, birthdate, image_url, banner_url, login_token FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE email=? AND password=?',
                                 [email, password])
                 info = cursor.fetchone()
-                print(info)
             
                 resp = {
                     'id' : info[0],
@@ -57,29 +55,27 @@ def login():
                                 mimetype='text/html',
                                 status=400)
 
-        if request.method == 'DELETE':
+        elif request.method == 'DELETE':
             data = request.json
-            cursor.execute('SELECT * FROM user_session')
-            sessionData = cursor.fetchall()
-            print(sessionData)
+            getLoginToken = data.get('loginToken')
+            print(getLoginToken)
 
-            if sessionData !=None:
-                allSessionData = []
-                for token in sessionData:
-                    IndvdlSessionData = {
-                        "sessionId" : token[0],
-                        "userId" : token[1],
-                        "loginToken" : token[2],
-                    }
-                    allSessionData.append(IndvdlSessionData)
+            if getLoginToken != None:
+                cursor.execute('DELETE FROM user_session where login_token=?',[getLoginToken])
+                conn.commit()
 
                 return Response("Logged Out",
-                            mimetype='application/json',
+                            mimetype='text/html',
                                 status=200)
-            # else:
-            #     return Response("Invalid token",
-            #                     mimetype='text/html',
-            #                     status=400)
+
+            else:
+                return Response("Invalid token",
+                                mimetype='text/html',
+                                status=400)
+        else:
+            return Response("Invalid method",
+                                mimetype='text/html',
+                                status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")

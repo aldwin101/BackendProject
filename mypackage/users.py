@@ -10,7 +10,7 @@ from app import app
           # ******************** user endpoint ********************
 @app.route('/api/users', methods = ['GET', 'POST', 'PATCH', 'DELETE'])
     # users handler
-def users_handler():
+def users():
     try:
         cursor = None
         conn = None
@@ -47,31 +47,30 @@ def users_handler():
                                     status=200)
 
             else:
-                return Response("Invalid Call",
+                return Response("Wrong data",
                                 mimetype='text/html',
                                     status=400)
         
                 # POST
         elif request.method == 'POST':
             data = request.json
-            generateToken = uuid.uuid4().hex
+            generateLoginToken = uuid.uuid4().hex
             cursor.execute('INSERT INTO user (email, username, password, bio, birthdate, image_url, banner_url) VALUES (?,?,?,?,?,?,?)',
                 [data.get('email'), data.get('username'), data.get('password'), data.get('bio'), data.get('birthdate'), data.get('image_url'), data.get('banner_url')])
             conn.commit()
 
-
-            resp = {
+            newUserData= {
                 'email' : data.get('email'),
                 'username' : data.get('username'),
                 'bio' : data.get('bio'),
                 'birthdate' : data.get('birthdate'),
                 'imageUrl' : data.get('image_url'),
                 'bannerUrl' : data.get('banner_url'),
-                'loginToken' : generateToken
+                'loginToken' : generateLoginToken
             }
 
-            if generateToken != None:
-                return Response(json.dumps(resp),
+            if generateLoginToken != None:
+                return Response(json.dumps(newUserData),
                                 mimetype='application/json',
                                 status=200)
             else:
@@ -82,38 +81,20 @@ def users_handler():
                 # PATCH
         elif request.method == 'PATCH':
             data = request.json
-            username = request.json.get("username") 
-            bio = request.json.get("bio")
-            birthdate = request.json.get("birthdate")
-            email = request.json.get("email")
-            loginToken =request.json.get("loginToken")
-            rows = None
-            cursor.execute("SELECT login_token FROM user_session WHERE login_token = ?", [loginToken])
-            user_id= cursor.fetchone()[0]
-            print(user_id)
-            if username != "" and username != None:
-                cursor.execute("UPDATE user SET username=? WHERE id=?", [username, user_id])
-            if email != "" and email != None:
-                cursor.execute("UPDATE user SET email=? WHERE id=?", [email, user_id])
-            if bio != "" and bio != None:
-                cursor.execute("UPDATE user SET bio=? WHERE id=?", [bio, user_id])
-            if birthdate != "" and birthdate != None:
-                cursor.execute("UPDATE user SET birthdate=? WHERE id=?", [birthdate, user_id])
-            conn.commit() 
-            rows = cursor.rowcount 
-            cursor.execute("SELECT * FROM user WHERE id = ?", [user_id])
-            user = cursor.fetchone()
-                
-            if (rows == 1):
-                print(user)
-                userData = {
-                    "userId":user[0],
-                    "username":user[1], 
-                    "email":user[2], 
-                    "bio":user[3], 
-                    "birthdate":user[4]
-                    }
-                return Response(json.dumps(userData), 
+            patchReqLoginToken = data.get('loginToken')
+            print(patchReqLoginToken)
+
+            if patchReqLoginToken != None:
+                cursor.execute("UPDATE user INNER JOIN user_session ON user.id=user_session.user_id SET email=?, username=?, password=?, bio=?, birthdate=?, image_url=?, banner_url=? WHERE login_token=?", 
+                                [data.get('email'), data.get('username'), data.get('bio'), data.get('birthdate'), data.get('image_url'), data.get('banner_url'), patchReqLoginToken])
+                conn.commit()
+                updateUserData = cursor.fetchone()
+                print(updateUserData)
+
+                updatedData = {
+                    'userId': data.get('id'),
+                }
+                return Response(json.dumps(updatedData), 
                                 mimetype="application/json", 
                                 status=200)
             else:
@@ -124,24 +105,22 @@ def users_handler():
 
                 # DELETE
         elif request.method == 'DELETE':
-            rows = None
             data = request.json
-            loginToken = request.json.get("loginToken")
-            password = request.json.get("password")
-            cursor.execute("SELECT user_id FROM user_session WHERE login_token = ?", [loginToken])
-            user_id= cursor.fetchone()[0]
-            cursor.execute("DELETE FROM user WHERE id=? AND password= ?", [user_id, password])
-            conn.commit() 
-            rows = cursor.rowcount 
-            if (rows == 1):
-                return Response("Delete Success", mimetype="text/html", status=204)
+            getReqPassword = data.get('password')
+            getReqLoginToken = data.get('loginToken')
+
+            if getReqPassword != None and getReqLoginToken != None:
+                cursor.execute('DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?',[getReqPassword, getReqLoginToken])
+                conn.commit()
+
+                return Response("Successfully deleted", mimetype="text/html", status=200)
             else:
-                return Response("Delete Failed", mimetype="text/html", status=500) 
+                return Response("Delete Failed", mimetype="text/html", status=400) 
 
         else:
             return Response(json.dumps('Invalid call'),
                                 mimetype='text/html',
-                                status=400)
+                                status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")
