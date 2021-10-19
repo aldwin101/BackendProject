@@ -55,6 +55,7 @@ def login():
                                 mimetype='text/html',
                                 status=400)
 
+
         elif request.method == 'DELETE':
             data = request.json
             getLoginToken = data.get('loginToken')
@@ -94,7 +95,6 @@ def login():
             cursor.close()
         else:
             print("There was never a cursor to begin with")
-        # Check the connection
         if (conn != None):
             conn.rollback()
             conn.close()

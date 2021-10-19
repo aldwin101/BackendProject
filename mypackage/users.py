@@ -8,7 +8,7 @@ from app import app
 
 
           # ******************** user endpoint ********************
-@app.route('/api/users', methods = ['GET', 'POST', 'PATCH', 'DELETE'])
+@app.route("/api/users", methods = ["GET", "POST", "PATCH", "DELETE"])
     # users handler
 def users():
     try:
@@ -24,8 +24,8 @@ def users():
                         )
         cursor = conn.cursor()
                 # GET
-        if request.method == 'GET':
-            cursor.execute('SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user')
+        if request.method == "GET":
+            cursor.execute("SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user")
             allUsers = cursor.fetchall()
             
             if allUsers != None:
@@ -43,7 +43,7 @@ def users():
                     allUsersData.append(userData)
 
                 return Response(json.dumps(allUsersData, default=str),
-                                mimetype='application/json',
+                                mimetype="application/json",
                                     status=200)
 
             else:
@@ -52,68 +52,103 @@ def users():
                                     status=400)
         
                 # POST
-        elif request.method == 'POST':
+        elif request.method == "POST":
             data = request.json
             generateLoginToken = uuid.uuid4().hex
             cursor.execute('INSERT INTO user (email, username, password, bio, birthdate, image_url, banner_url) VALUES (?,?,?,?,?,?,?)',
-                [data.get('email'), data.get('username'), data.get('password'), data.get('bio'), data.get('birthdate'), data.get('image_url'), data.get('banner_url')])
+                [data.get("email"), data.get("username"), data.get("password"), data.get("bio"), data.get("birthdate"), data.get("image_url"), data.get("banner_url")])
             conn.commit()
 
             newUserData= {
-                'email' : data.get('email'),
-                'username' : data.get('username'),
-                'bio' : data.get('bio'),
-                'birthdate' : data.get('birthdate'),
-                'imageUrl' : data.get('image_url'),
-                'bannerUrl' : data.get('banner_url'),
-                'loginToken' : generateLoginToken
+                "email" : data.get("email"),
+                "username" : data.get("username"),
+                "bio" : data.get("bio"),
+                "birthdate" : data.get("birthdate"),
+                "imageUrl" : data.get("image_url"),
+                "bannerUrl" : data.get("banner_url"),
+                "loginToken" : generateLoginToken
             }
 
             if generateLoginToken != None:
                 return Response(json.dumps(newUserData),
-                                mimetype='application/json',
+                                mimetype="application/json",
                                 status=200)
             else:
                 return Response("Fiil out the required information",
-                                mimetype='text/html',
+                                mimetype="text/html",
                                 status=400)
 
                 # PATCH
-        elif request.method == 'PATCH':
+        elif request.method == "PATCH":
             data = request.json
-            patchReqLoginToken = data.get('loginToken')
-            print(patchReqLoginToken)
+            
+            cursor.execute ("SELECT user_id from user_session WHERE login_token =?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
 
-            if patchReqLoginToken != None:
-                cursor.execute("UPDATE user INNER JOIN user_session ON user.id=user_session.user_id SET email=?, username=?, password=?, bio=?, birthdate=?, image_url=?, banner_url=? WHERE login_token=?", 
-                                [data.get('email'), data.get('username'), data.get('bio'), data.get('birthdate'), data.get('image_url'), data.get('banner_url'), patchReqLoginToken])
+            if userId != None:
+                    # allow you to edit single data
+                if data.get("email") != "" and data.get("email") != None:
+                    cursor.execute("UPDATE user SET email = ? WHERE id = ?", [data.get("email"), userId])
+
+                elif data.get("username") != "" and data.get("username") != None:
+                    cursor.execute("UPDATE user SET username = ? WHERE id = ?", [data.get("username"), userId])
+
+                elif data.get("password") != "" and data.get('password') != None:
+                    cursor.execute("UPDATE user SET password = ? WHERE id = ?", [data.get('password'), userId])
+
+                elif data.get("bio") != "" and data.get("bio") != None:
+                    cursor.execute("UPDATE user SET bio = ? WHERE id = ?", [data.get("bio"), userId])
+
+                elif data.get("birthdate") != "" and data.get("birthdate") != None:
+                    cursor.execute("UPDATE user SET birthdate = ? WHERE id = ?", [data.get("birthdate"), userId])
+
+                elif data.get("imageUrl") != "" and data.get("imageUrl") != None:
+                    cursor.execute("UPDATE user SET imageUrl = ? WHERE id = ?", [data.get("imageUrl"), userId])
+
+                elif data.get("bannerUrl") != "" and data.get("bannerUrl") != None:
+                    cursor.execute("UPDATE user SET imageUrl = ? WHERE id = ?", [data.get("bannerUrl"), userId])
+
+                else: 
+                    return Response("field cannot be empty", 
+                                    mimetype="text/html", 
+                                    status=400)
                 conn.commit()
-                updateUserData = cursor.fetchone()
-                print(updateUserData)
 
-                updatedData = {
-                    'userId': data.get('id'),
+                cursor.execute('SELECT * FROM user WHERE id=?', [userId])
+                getUpdatedUserData = cursor.fetchone()
+
+                updatedUserData = {
+                    "userId": getUpdatedUserData[0],
+                    "email": getUpdatedUserData[1],
+                    "username": getUpdatedUserData[2],
+                    "bio": getUpdatedUserData[3],
+                    "birthdate": getUpdatedUserData[4],
+                    "imageUrl": getUpdatedUserData[5],
+                    "bannerUrl": getUpdatedUserData[6]
                 }
-                return Response(json.dumps(updatedData), 
-                                mimetype="application/json", 
-                                status=200)
-            else:
-                return Response("Please fillout the important data", 
-                                mimetype="text/html", 
-                                status=500)
 
+                return Response(json.dumps(updatedUserData, default=str), 
+                                    mimetype="application/json", 
+                                    status=200)
+            else:
+                return Response("Value cannot be None", 
+                                    mimetype="text/html", 
+                                    status=400)
 
                 # DELETE
         elif request.method == 'DELETE':
             data = request.json
-            getReqPassword = data.get('password')
-            getReqLoginToken = data.get('loginToken')
+            getPassword = data.get('password')
+            getLoginToken = data.get('loginToken')
+            print(getPassword)
+            print(getLoginToken)
+            
 
-            if getReqPassword != None and getReqLoginToken != None:
-                cursor.execute('DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?',[getReqPassword, getReqLoginToken])
+            if getPassword != None and getLoginToken != None:
+                cursor.execute('DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?',[getPassword, getLoginToken])
                 conn.commit()
 
-                return Response("Successfully deleted", mimetype="text/html", status=200)
+                return Response("Deleted successfully", mimetype="text/html", status=200)
             else:
                 return Response("Delete Failed", mimetype="text/html", status=400) 
 
