@@ -7,7 +7,6 @@ import uuid
 from app import app
 
 
-          # ******************** user endpoint ********************
 @app.route("/api/users", methods = ["GET", "POST", "PATCH", "DELETE"])
     # users handler
 def users():
@@ -55,22 +54,27 @@ def users():
         elif request.method == "POST":
             data = request.json
             generateLoginToken = uuid.uuid4().hex
-            cursor.execute('INSERT INTO user (email, username, password, bio, birthdate, image_url, banner_url) VALUES (?,?,?,?,?,?,?)',
-                [data.get("email"), data.get("username"), data.get("password"), data.get("bio"), data.get("birthdate"), data.get("image_url"), data.get("banner_url")])
+
+            cursor.execute("INSERT INTO user (email, username, password, bio, birthdate, image_url, banner_url) VALUES (?,?,?,?,?,?,?) ",
+                [data.get("email"), data.get("username"), data.get("password"), data.get("bio"), data.get("birthdate"), data.get("imageUrl"), data.get("bannerUrl")])
             conn.commit()
+            getNewUserId = cursor.lastrowid
+
+            cursor.execute("SELECT * FROM user WHERE id=?", [getNewUserId])
+            getNewUserData = cursor.fetchone()
 
             newUserData= {
-                "email" : data.get("email"),
-                "username" : data.get("username"),
-                "bio" : data.get("bio"),
-                "birthdate" : data.get("birthdate"),
-                "imageUrl" : data.get("image_url"),
-                "bannerUrl" : data.get("banner_url"),
-                "loginToken" : generateLoginToken
+                "userId" : getNewUserData[0],
+                "email" : getNewUserData[1],
+                "username": getNewUserData[2],
+                "bio" : getNewUserData[3],
+                "birthdate" : getNewUserData[4],
+                "imageUrl" : getNewUserData[5],
+                "bannerUrl" : getNewUserData[6],
             }
 
             if generateLoginToken != None:
-                return Response(json.dumps(newUserData),
+                return Response(json.dumps(newUserData, default=str),
                                 mimetype="application/json",
                                 status=200)
             else:
@@ -140,9 +144,6 @@ def users():
             data = request.json
             getPassword = data.get('password')
             getLoginToken = data.get('loginToken')
-            print(getPassword)
-            print(getLoginToken)
-            
 
             if getPassword != None and getLoginToken != None:
                 cursor.execute('DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?',[getPassword, getLoginToken])
