@@ -5,3 +5,4 @@ app = Flask(__name__)
 import mypackage.users
 import mypackage.login
 import mypackage.tweet
+import mypackage.comments

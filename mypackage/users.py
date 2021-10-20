@@ -118,7 +118,7 @@ def users():
                                     status=400)
                 conn.commit()
 
-                cursor.execute('SELECT * FROM user WHERE id=?', [userId])
+                cursor.execute("SELECT * FROM user WHERE id=?", [userId])
                 getUpdatedUserData = cursor.fetchone()
 
                 updatedUserData = {
@@ -140,13 +140,13 @@ def users():
                                     status=400)
 
                 # DELETE
-        elif request.method == 'DELETE':
+        elif request.method == "DELETE":
             data = request.json
-            getPassword = data.get('password')
-            getLoginToken = data.get('loginToken')
+            getPassword = data.get("password")
+            getLoginToken = data.get("loginToken")
 
             if getPassword != None and getLoginToken != None:
-                cursor.execute('DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?',[getPassword, getLoginToken])
+                cursor.execute("DELETE user, user_session FROM user INNER JOIN user_session ON user.id=user_session.user_id WHERE password=? and login_token=?",[getPassword, getLoginToken])
                 conn.commit()
 
                 return Response("Deleted successfully", mimetype="text/html", status=200)
@@ -154,8 +154,8 @@ def users():
                 return Response("Delete Failed", mimetype="text/html", status=400) 
 
         else:
-            return Response(json.dumps('Invalid call'),
-                                mimetype='text/html',
+            return Response(json.dumps("Invalid call"),
+                                mimetype="text/html",
                                 status=500)
 
     except mariadb.OperationalError:
