@@ -137,7 +137,7 @@ def tweets():
             
 
             if sessionUserId != None and tweetId != None:
-                cursor.execute('DELETE FROM tweet WHERE id=?',[tweetId])
+                cursor.execute("DELETE FROM tweet WHERE id=?",[tweetId])
                 conn.commit()
 
                 return Response("Deleted successfully", mimetype="text/html", status=200)
@@ -145,8 +145,8 @@ def tweets():
                 return Response("Delete Failed", mimetype="text/html", status=400) 
 
         else:
-            return Response(json.dumps('Invalid call'),
-                                mimetype='text/html',
+            return Response(json.dumps("Invalid call"),
+                                mimetype="text/html",
                                 status=500)
 
     except mariadb.OperationalError:

@@ -138,13 +138,13 @@ def comments():
             sessionUserId = cursor.fetchone()[0]
             print(sessionUserId)
 
-            cursor.execute("SELECT id FROM tweet WHERE id=?",[data.get("tweetId")])
+            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("commentId")])
             commentId= cursor.fetchone()[0]
             print(commentId)
             
 
             if sessionUserId != None and commentId != None:
-                cursor.execute('DELETE FROM tweet WHERE id=?',[commentId])
+                cursor.execute('DELETE FROM comment WHERE id=?',[commentId])
                 conn.commit()
 
                 return Response("Deleted successfully", mimetype="text/html", status=200)
@@ -152,8 +152,8 @@ def comments():
                 return Response("Delete Failed", mimetype="text/html", status=400) 
 
         else:
-            return Response(json.dumps('Invalid call'),
-                                mimetype='text/html',
+            return Response(json.dumps("Invalid call"),
+                                mimetype="text/html",
                                 status=500)
 
     except mariadb.OperationalError:
