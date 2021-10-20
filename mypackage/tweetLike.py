@@ -26,19 +26,19 @@ def tweetLikes():
                 # GET
         if request.method == "GET":
             cursor.execute("SELECT tweet_id, user_id, username FROM user INNER JOIN tweet_like ON user.id=tweet_like.user_id")
-            allUserLikes = cursor.fetchall()
+            getAllTweetLikes = cursor.fetchall()
             
-            if allUserLikes != None:
-                allLikesData = []
-                for like in allUserLikes:
-                    userLike = {
+            if getAllTweetLikes != None:
+                allTweetLikes = []
+                for like in getAllTweetLikes:
+                    tweetLike = {
                         "tweetId" : like[0],
                         "userId" : like[1],
                         "username" : like[2]
                     }
-                    allLikesData.append(userLike) 
+                    allTweetLikes.append(tweetLike) 
 
-                return Response(json.dumps(allLikesData, default=str),
+                return Response(json.dumps(allTweetLikes, default=str),
                                 mimetype="application/json",
                                     status=200)
 
