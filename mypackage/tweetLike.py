@@ -86,7 +86,7 @@ def tweetLikes():
             reqDelUserId = cursor.fetchone()[0]
             print(reqDelUserId)
 
-            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("tweetId")])
+            cursor.execute("SELECT id FROM tweet WHERE id=?",[data.get("tweetId")])
             reqDelTweetId= cursor.fetchone()[0]
             print(reqDelTweetId)
             

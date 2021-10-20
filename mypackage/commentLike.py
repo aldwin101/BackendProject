@@ -46,6 +46,62 @@ def commentLikes():
                 return Response("Wrong data",
                                 mimetype='text/html',
                                     status=400)
+        
+                # POST
+        elif request.method == "POST":
+            data = request.json
+            cursor.execute("SELECT user_id FROM user_session WHERE login_token =?", [data.get("loginToken")])
+            userId = cursor.fetchone()[0]
+            print(userId)
+
+            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("commentId")])
+            commentId= cursor.fetchone()[0]
+            print(commentId)
+
+            if userId != None and commentId != None:
+                cursor.execute("INSERT INTO comment_like(comment_id, user_id) VALUES (?,?)", [commentId, userId])
+                conn.commit()
+                cursor.execute("SELECT comment_id, user_id, username FROM user INNER JOIN comment_like ON user.id=comment_like.user_id WHERE comment_id=?",[commentId])
+                getLikeComment = cursor.fetchone()
+                print(getLikeComment)
+
+                likeComment = {
+                    "commentId" : getLikeComment[0],
+                    "userId" : getLikeComment[1],
+                    "username": getLikeComment[2]
+                }
+
+                return Response(json.dumps(likeComment, default=str),
+                                mimetype="application/json",
+                                status=200)
+            else:
+                return Response("Invalid data sent",
+                                mimetype="text/html",
+                                status=400)
+
+                # DELETE
+        elif request.method == "DELETE":
+            data = request.json
+            cursor.execute("SELECT user_id FROM user_session WHERE login_token =?", [data.get("loginToken")])
+            reqDelUserId = cursor.fetchone()[0]
+            print(reqDelUserId)
+
+            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("commentId")])
+            reqDelCommentId= cursor.fetchone()[0]
+            print(reqDelCommentId)
+            
+            if reqDelUserId != None and reqDelCommentId != None:
+                cursor.execute('DELETE FROM comment_like WHERE user_id=? and comment_id=?',[reqDelUserId, reqDelCommentId])
+                conn.commit()
+
+                return Response("Deleted successfully", mimetype="text/html", status=200)
+            else:
+                return Response("Delete Failed", mimetype="text/html", status=400) 
+
+        else:
+            return Response(json.dumps("Invalid call"),
+                                mimetype="text/html",
+                                status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")
