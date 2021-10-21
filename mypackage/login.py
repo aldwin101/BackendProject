@@ -6,7 +6,7 @@ import uuid
 from app import app
 
 @app.route('/api/login', methods=['POST', 'DELETE'])
-
+    #login handler
 def login():
     try:
         cursor = None
@@ -20,7 +20,7 @@ def login():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-            #login user
+            # POST
         if request.method == 'POST':
             data = request.json
             cursor.execute('SELECT email, password FROM user WHERE email=? and password = ?',[data.get('email'), data.get('password')])
@@ -66,7 +66,7 @@ def login():
                 conn.commit()
 
                 return Response("Logged Out",
-                            mimetype='text/html',
+                                mimetype='text/html',
                                 status=200)
 
             else:
@@ -75,8 +75,8 @@ def login():
                                 status=400)
         else:
             return Response("Invalid method",
-                                mimetype='text/html',
-                                status=500)
+                            mimetype='text/html',
+                            status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")

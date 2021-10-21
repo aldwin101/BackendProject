@@ -46,12 +46,12 @@ def tweets():
 
                 return Response(json.dumps(allTweetsData, default=str),
                                 mimetype="application/json",
-                                    status=200)
+                                status=200)
 
             else:
                 return Response("Wrong data",
                                 mimetype='text/html',
-                                    status=400)
+                                status=400)
         
                 # POST
         elif request.method == "POST":
@@ -117,12 +117,12 @@ def tweets():
                 }
 
                 return Response(json.dumps(updatedTweet, default=str), 
-                                    mimetype="application/json", 
-                                    status=200)
+                                mimetype="application/json", 
+                                status=200)
             else:
                 return Response("Value cannot be None", 
-                                    mimetype="text/html", 
-                                    status=400)
+                                mimetype="text/html", 
+                                status=400)
 
                 # DELETE
         elif request.method == "DELETE":
@@ -135,19 +135,22 @@ def tweets():
             tweetId= cursor.fetchone()[0]
             print(tweetId)
             
-
             if sessionUserId != None and tweetId != None:
                 cursor.execute("DELETE FROM tweet WHERE id=?",[tweetId])
                 conn.commit()
 
-                return Response("Deleted successfully", mimetype="text/html", status=200)
+                return Response("Deleted successfully", 
+                                mimetype="text/html", 
+                                status=200)
             else:
-                return Response("Delete Failed", mimetype="text/html", status=400) 
+                return Response("Delete Failed", 
+                                mimetype="text/html", 
+                                status=400) 
 
         else:
-            return Response(json.dumps("Invalid call"),
-                                mimetype="text/html",
-                                status=500)
+            return Response("Invalid call",
+                            mimetype="text/html",
+                            status=500)
 
     except mariadb.OperationalError:
         print("Operational error on the query")

@@ -6,11 +6,9 @@ import json
 import uuid
 from app import app
 
-
-
-@app.route("/api/comment-likes", methods = ["GET", "POST", "DELETE"])
-    # comment like handler
-def commentLikes():
+@app.route("/api/follows", methods = ["GET", "POST", "DELETE"])
+    # follow handler
+def follows():
     try:
         cursor = None
         conn = None
@@ -23,56 +21,58 @@ def commentLikes():
                         database=dbcreds.database
                         )
         cursor = conn.cursor()
-                # GET
+            # GET
         if request.method == "GET":
-            cursor.execute("SELECT comment_id, user_id, username FROM user INNER JOIN comment_like ON user.id=comment_like.user_id")
-            getAllCommentLikes = cursor.fetchall()
-            
-            if getAllCommentLikes != None:
-                allCommentLikes = []
-                for like in getAllCommentLikes:
-                    commentLike = {
-                        "commentId" : like[0],
-                        "userId" : like[1],
-                        "username" : like[2]
-                    }
-                    allCommentLikes.append(commentLike) 
+            params = request.args
+            cursor.execute("SELECT id FROM user WHERE id=?",[params.get("userId")])
+            userId = cursor.fetchone()[0]
+            print(userId)
 
-                return Response(json.dumps(allCommentLikes, default=str),
+            if userId != None:
+                cursor.execute("SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user INNER JOIN follow ON user.id=follow.followed WHERE user_id=?",[userId])
+                getFollowedData = cursor.fetchall()
+                print(getFollowedData)
+
+                allFollowedData = []
+
+                for followedData in getFollowedData:
+                    followedUserData = {
+                        "userId" : followedData[0],
+                        "email" : followedData[1],
+                        "username" : followedData[2],
+                        "bio" : followedData[3],
+                        "birthdate" : followedData[4],
+                        "imageUrl" : followedData[5],
+                        "bannerUrl" : followedData[6],
+                    }
+                    allFollowedData.append(followedUserData)
+                
+                return Response(json.dumps(allFollowedData, default=str),
                                 mimetype="application/json",
                                 status=200)
 
             else:
-                return Response("Wrong data",
+                return Response("Invalid id",
                                 mimetype='text/html',
                                 status=400)
-        
+                
                 # POST
         elif request.method == "POST":
             data = request.json
             cursor.execute("SELECT user_id FROM user_session WHERE login_token =?", [data.get("loginToken")])
-            userId = cursor.fetchone()[0]
-            print(userId)
+            sessionUserId = cursor.fetchone()[0]
+            print(sessionUserId)
 
-            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("commentId")])
-            commentId= cursor.fetchone()[0]
-            print(commentId)
+            cursor.execute("SELECT id FROM user WHERE id=?",[data.get("followId")])
+            followId= cursor.fetchone()[0]
+            print(followId)
 
-            if userId != None and commentId != None:
-                cursor.execute("INSERT INTO comment_like(comment_id, user_id) VALUES (?,?)", [commentId, userId])
+            if sessionUserId != None and followId != None:
+                cursor.execute("INSERT INTO follow(followed, user_id) VALUES (?,?)", [followId, sessionUserId])
                 conn.commit()
-                cursor.execute("SELECT comment_id, user_id, username FROM user INNER JOIN comment_like ON user.id=comment_like.user_id WHERE comment_id=?",[commentId])
-                getLikeComment = cursor.fetchone()
-                print(getLikeComment)
 
-                likeComment = {
-                    "commentId" : getLikeComment[0],
-                    "userId" : getLikeComment[1],
-                    "username": getLikeComment[2]
-                }
-
-                return Response(json.dumps(likeComment, default=str),
-                                mimetype="application/json",
+                return Response("followed",
+                                mimetype="text/html",
                                 status=200)
             else:
                 return Response("Invalid data sent",
@@ -86,12 +86,12 @@ def commentLikes():
             reqDelUserId = cursor.fetchone()[0]
             print(reqDelUserId)
 
-            cursor.execute("SELECT id FROM comment WHERE id=?",[data.get("commentId")])
-            reqDelCommentId= cursor.fetchone()[0]
-            print(reqDelCommentId)
+            cursor.execute("SELECT followed FROM follow WHERE followed=?",[data.get("followId")])
+            reqDelfollowedId= cursor.fetchone()[0]
+            print(reqDelfollowedId)
             
-            if reqDelUserId != None and reqDelCommentId != None:
-                cursor.execute('DELETE FROM comment_like WHERE user_id=? and comment_id=?',[reqDelUserId, reqDelCommentId])
+            if reqDelUserId != None and reqDelfollowedId != None:
+                cursor.execute('DELETE FROM follow WHERE user_id=? and followed=?',[reqDelUserId, reqDelfollowedId])
                 conn.commit()
 
                 return Response("Deleted successfully", 
