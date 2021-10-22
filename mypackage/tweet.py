@@ -26,32 +26,59 @@ def tweets():
         cursor = conn.cursor()
                 # GET
         if request.method == "GET":
-            cursor.execute("SELECT tweet.id, user_id, username, content, created_at, user_image_url, tweet_image_url FROM user INNER JOIN tweet ON user.id=tweet.user_id")
-            allTweets = cursor.fetchall()
-            print(allTweets)
-            
-            if allTweets != None:
-                allTweetsData = []
-                for tweet in allTweets:
-                    userTweet = {
-                        "tweetId" : tweet[0],
-                        "userId" : tweet[1],
-                        "username" : tweet[2],
-                        "content" : tweet[3],
-                        "createdAt" : tweet[4],
-                        "userImageUrl" : tweet[5],
-                        "tweetImageUrl" : tweet[6]
-                    }
-                    allTweetsData.append(userTweet) 
+            params = request.args.get("userId")
+            if params != "" and params != None:
+                cursor.execute("SELECT id FROM user WHERE id=?",[params])
+                userId = cursor.fetchone()[0]
+                print(userId)
+                cursor.execute("SELECT tweet.id, user_id, username, content, created_at, user_image_url, tweet_image_url FROM user INNER JOIN tweet ON user.id=tweet.user_id WHERE user_id=?", [userId])
+                getUserTweet = cursor.fetchall()
+                print(getUserTweet)
 
-                return Response(json.dumps(allTweetsData, default=str),
+                if getUserTweet != None:
+                    getAllUserTweets = []
+                    for comment in getUserTweet:
+                        userTweets = {
+                            "commentId" : comment[0],
+                            "tweetId" : comment[1],
+                            "userId" : comment[2],
+                            "username" : comment[3],
+                            "content" : comment[4],
+                            "createdAt" : comment[5]
+                        }
+                        getAllUserTweets.append(userTweets)
+            
+                return Response(json.dumps(getAllUserTweets, default=str),
                                 mimetype="application/json",
                                 status=200)
 
             else:
-                return Response("Wrong data",
-                                mimetype='text/html',
-                                status=400)
+                cursor.execute("SELECT tweet.id, user_id, username, content, created_at, user_image_url, tweet_image_url FROM user INNER JOIN tweet ON user.id=tweet.user_id")
+                allTweets = cursor.fetchall()
+                print(allTweets)
+                
+                if allTweets != None:
+                    allTweetsData = []
+                    for tweet in allTweets:
+                        userTweet = {
+                            "tweetId" : tweet[0],
+                            "userId" : tweet[1],
+                            "username" : tweet[2],
+                            "content" : tweet[3],
+                            "createdAt" : tweet[4],
+                            "userImageUrl" : tweet[5],
+                            "tweetImageUrl" : tweet[6]
+                        }
+                        allTweetsData.append(userTweet) 
+
+                    return Response(json.dumps(allTweetsData, default=str),
+                                    mimetype="application/json",
+                                    status=200)
+
+                else:
+                    return Response("Wrong data",
+                                    mimetype='text/html',
+                                    status=400)
         
                 # POST
         elif request.method == "POST":
