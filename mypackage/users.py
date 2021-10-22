@@ -24,32 +24,56 @@ def users():
         cursor = conn.cursor()
                 # GET
         if request.method == "GET":
-            cursor.execute("SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user")
-            allUsers = cursor.fetchall()
-            
-            if allUsers != None:
-                allUsersData = []
-                for user in allUsers:
-                    userData = {
-                        "userId" : user[0],
-                        "email" : user[1],
-                        "username" : user[2],
-                        "bio" : user[3],
-                        "birthdate" : user[4],
-                        "imageUrl" : user[5],
-                        "bannerUrl" : user[6]
-                    }
-                    allUsersData.append(userData)
+            params = request.args.get("userId")
+            if params != "" and params != None:
+                cursor.execute("SELECT id FROM user WHERE id=?",[params])
+                userId = cursor.fetchone()[0]
+                print(userId)
+                cursor.execute("SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user WHERE id=?", [userId])
+                getUserData = cursor.fetchone()
+                print(getUserData)
 
-                return Response(json.dumps(allUsersData, default=str),
+                userData = {
+                    "userId" : getUserData[0],
+                    "email" : getUserData[1],
+                    "username" : getUserData[2],
+                    "bio" : getUserData[3],
+                    "birthdate" : getUserData[4],
+                    "imageUrl" : getUserData[5],
+                    "bannerUrl" : getUserData[6],
+                }
+            
+                return Response(json.dumps(userData, default=str),
                                 mimetype="application/json",
                                 status=200)
 
             else:
-                return Response("Wrong data",
-                                mimetype='text/html',
-                                status=400)
-        
+                cursor.execute("SELECT id, email, username, bio, birthdate, image_url, banner_url FROM user")
+                allUsers = cursor.fetchall()
+                
+                if allUsers != None:
+                    allUsersData = []
+                    for user in allUsers:
+                        userData = {
+                            "userId" : user[0],
+                            "email" : user[1],
+                            "username" : user[2],
+                            "bio" : user[3],
+                            "birthdate" : user[4],
+                            "imageUrl" : user[5],
+                            "bannerUrl" : user[6]
+                        }
+                        allUsersData.append(userData)
+
+                    return Response(json.dumps(allUsersData, default=str),
+                                    mimetype="application/json",
+                                    status=200)
+
+                else:
+                    return Response("Wrong data",
+                                    mimetype='text/html',
+                                    status=400)
+            
                 # POST
         elif request.method == "POST":
             data = request.json
