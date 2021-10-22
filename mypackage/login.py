@@ -100,5 +100,3 @@ def login():
             conn.close()
         else:
             print("The connection never opened, nothing to close here")
-
-
