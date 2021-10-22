@@ -26,30 +26,57 @@ def comments():
         cursor = conn.cursor()
                 # GET
         if request.method == "GET":
-            cursor.execute("SELECT comment.id, tweet_id, user_id, username, content, created_at FROM user INNER JOIN comment ON user.id=comment.user_id")
-            allComments = cursor.fetchall()
-            
-            if allComments != None:
-                allCommentsData = []
-                for comment in allComments:
-                    userComment = {
-                        "commentId" : comment[0],
-                        "tweetId" : comment[1],
-                        "userId" : comment[2],
-                        "username" : comment[3],
-                        "content" : comment[4],
-                        "createdAt" : comment[5]
-                    }
-                    allCommentsData.append(userComment) 
+            params = request.args.get("userId")
+            if params != "" and params != None:
+                cursor.execute("SELECT id FROM user WHERE id=?",[params])
+                userId = cursor.fetchone()[0]
+                print(userId)
+                cursor.execute("SELECT comment.id, tweet_id, user_id, username, content, created_at FROM user INNER JOIN comment ON user.id=comment.user_id WHERE user_id=?", [userId])
+                getUserComment = cursor.fetchall()
+                print(getUserComment)
 
-                return Response(json.dumps(allCommentsData, default=str),
+                if getUserComment != None:
+                    getAllUserComments = []
+                    for comment in getUserComment:
+                        userComments = {
+                            "commentId" : comment[0],
+                            "tweetId" : comment[1],
+                            "userId" : comment[2],
+                            "username" : comment[3],
+                            "content" : comment[4],
+                            "createdAt" : comment[5]
+                        }
+                        getAllUserComments.append(userComments)
+            
+                return Response(json.dumps(getAllUserComments, default=str),
                                 mimetype="application/json",
                                 status=200)
 
             else:
-                return Response("Wrong data",
-                                mimetype='text/html',
-                                status=400)
+                cursor.execute("SELECT comment.id, tweet_id, user_id, username, content, created_at FROM user INNER JOIN comment ON user.id=comment.user_id")
+                allComments = cursor.fetchall()
+                
+                if allComments != None:
+                    allCommentsData = []
+                    for comment in allComments:
+                        userComment = {
+                            "commentId" : comment[0],
+                            "tweetId" : comment[1],
+                            "userId" : comment[2],
+                            "username" : comment[3],
+                            "content" : comment[4],
+                            "createdAt" : comment[5]
+                        }
+                        allCommentsData.append(userComment) 
+
+                    return Response(json.dumps(allCommentsData, default=str),
+                                    mimetype="application/json",
+                                    status=200)
+
+                else:
+                    return Response("Wrong data",
+                                    mimetype='text/html',
+                                    status=400)
         
                 # POST
         elif request.method == "POST":
